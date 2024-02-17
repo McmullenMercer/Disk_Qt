@@ -1,5 +1,8 @@
 #include "online.h"
 #include "ui_online.h"
+#include <QDebug>
+#include <QMessageBox>
+#include "tcpclient.h"
 
 Online::Online(QWidget *parent) :
     QWidget(parent),
@@ -27,4 +30,30 @@ void Online::showUsr(PDU *pdu)
 
         ui->online_lw->addItem(caTmp);
     }
+}
+
+void Online::on_addFriend_pb_clicked()
+{
+    QListWidgetItem *pItem =  ui->online_lw->currentItem();
+    if(pItem != NULL)
+    {
+        QString strPerUsrName =  pItem->text();  //好友名字
+        QString strLoginName = TcpClient::getInstance().loginName(); //自己名字
+
+        //新建
+        PDU* pdu = mkPDU(0);
+        pdu->uiMsgType = ENUM_MSG_TYPE_ADD_FRIEND_REQUEST;
+        memcpy(pdu->caData,strPerUsrName.toStdString().c_str(),strPerUsrName.size());//拷贝好友名字进pdu
+        memcpy(pdu->caData+32,strLoginName.toStdString().c_str(),strLoginName.size());//拷贝自己名字进pdu
+        //发送
+        TcpClient::getInstance().getTcpSocket().write((char *)pdu,pdu->uiPDULen);
+        //清空
+        free(pdu);
+        pdu = NULL;
+
+    }else
+    {
+        QMessageBox::warning(this,"加好友","未选中用户");
+    }
+
 }

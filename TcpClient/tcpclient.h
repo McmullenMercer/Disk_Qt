@@ -23,6 +23,8 @@ public:
     static TcpClient &getInstance();
     QTcpSocket &getTcpSocket(); //该函数用于返回m_tcpSocket的引用
 
+    QString loginName();
+
 public slots:  //槽函数，是信号的处理函数，与普通函数区分
     void showConnect();  //指示服务器连接槽函数
     void  recvMsg();  //数据接收函槽数
@@ -44,5 +46,7 @@ private:
 
     //创建一个Socket对象，用于连接服务器并于服务器交互
     QTcpSocket m_tcpSocket;
+
+    QString m_strLoginName;
 };
 #endif // TCPCLIENT_H

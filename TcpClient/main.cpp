@@ -2,6 +2,8 @@
 
 #include <QApplication>
 
+#include <QMessageBox>
+#include <QDebug>
 //#include "opewidget.h"
 //#include "online.h"
 //#include "friend.h"
@@ -13,8 +15,6 @@ int main(int argc, char *argv[])
 //    w.show();
 
     TcpClient::getInstance().show();//将TcpClient写成单例后
-
-
 
 //    OpeWidget w;
 //    w.show();

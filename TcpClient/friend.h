@@ -18,10 +18,14 @@ public:
     explicit Friend(QWidget *parent = nullptr);
     void showAllonlinUsr(PDU *pdu);
 
+    QString m_strSearchName;// 改变量临时存储所搜索的名字
+
+
 signals:
 
 public slots:
     void showOnline();
+    void searchUsr();
 
 private:
     QTextEdit *m_pShowMsgTE;
@@ -36,6 +40,7 @@ private:
     QPushButton *m_pPrivateChatPB;     //私聊按钮
 
     Online *m_pOnline;
+
 
 
 };

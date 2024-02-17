@@ -32,11 +32,23 @@ public:
     //处理所有在线用户函数
     QStringList handleAllOnline();
 
+    //搜索用户函数
+    int handleSearchUsr(const char* name);
+
+    //处理添加好友函数
+    int handleAddfriend(const char * pername,const char * name);
+
+    //处理同意好友函数
+    bool handleAddFriendAgree(const char *addedName, const char *sourceName);
+
+    // 根据用户名获取用户索引函数
+    int getIdByUserName(const char *name);
 
 signals:
 public slots:
 private:
     QSqlDatabase m_db; //用于连接数据库
+
 
 };
 

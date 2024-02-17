@@ -19,10 +19,10 @@ enum ENUM_MSF_TYPE
     ENUM_MSG_TYPE_ALL_ONLINE_RESPOND,  //查看在线用户回复6
     ENUM_MSG_TYPE_SEARCH_USR_REQUEST,  //搜索用户请求7
     ENUM_MSG_TYPE_SEARCH_USR_RESPOND,  //搜索用户回复8
-//    ENUM_MSG_TYPE_REQUEST,  //请求
-//    ENUM_MSG_TYPE_RESPOND,  //回复
-//    ENUM_MSG_TYPE_REQUEST,  //请求
-//    ENUM_MSG_TYPE_RESPOND,  //回复
+    ENUM_MSG_TYPE_ADD_FRIEND_REQUEST,  //添加好友请求
+    ENUM_MSG_TYPE_ADD_FRIEND_RESPOND,  //添加好友回复
+    ENUM_MSG_TYPE_ADD_FRIEND_AGGREE,  //同意添加好友
+    ENUM_MSG_TYPE_ADD_FRIEND_REFUSE,  //拒绝添加好友
 //    ENUM_MSG_TYPE_REQUEST,  //请求
 //    ENUM_MSG_TYPE_RESPOND,  //回复
 
@@ -34,6 +34,15 @@ enum ENUM_MSF_TYPE
 
 #define LOGIN_OK "login ok"
 #define LOGIN_FAILED "login failed:name error or pwd error or relogin "
+
+#define SEARCH_USR_NO "no such people"
+#define SEARCH_USR_ONLINE "online"
+#define SEARCH_USR_OFFLINE "offline"
+
+#define UNKOW_ERROR "unkonw error"
+#define EXISTED_FRIEND "friend exist"
+#define ADD_FRIEND_OFFLINE "usr offline"
+#define ADD_FRIEND_NO_EXIST "usr not exist"
 
 // 设计通讯协议
 struct PDU

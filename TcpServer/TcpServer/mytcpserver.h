@@ -16,6 +16,8 @@ public:
 
     void incomingConnection(qintptr handle); //每个客户端与服务器连接都会建立一个socket
 
+    void resend(const char * pername,PDU* pdu); //转发函数
+
 public slots:
     void deleteSocket(MyTcpSocket * mysocket);//删除socket槽函数，客户端下线时用于删除建立的MyTcpSocket
 

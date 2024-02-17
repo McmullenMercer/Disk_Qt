@@ -77,6 +77,11 @@ QTcpSocket &TcpClient::getTcpSocket()
     return m_tcpSocket;
 }
 
+QString TcpClient::loginName()
+{
+    return m_strLoginName;
+}
+
 void TcpClient::showConnect() //指示服务器连接槽函数
 {
     QMessageBox::information(this,"连接服务器","连接服务器成功");
@@ -126,6 +131,64 @@ void TcpClient::recvMsg() //数据接收槽函数
 
         break;
     }
+    case ENUM_MSG_TYPE_SEARCH_USR_RESPOND: //类型为查找用户回复
+    {
+        if(strcmp(pdu->caData,SEARCH_USR_NO) == 0)
+        {
+            QMessageBox::information(this,"搜索",QString("%1:Not Exist")
+                                     .arg(OpeWidget::getInstance().getFriend()->m_strSearchName));
+        }
+        else if(strcmp(pdu->caData,SEARCH_USR_ONLINE) == 0)
+        {
+            QMessageBox::information(this,"搜索",QString("%1:Online")
+                                     .arg(OpeWidget::getInstance().getFriend()->m_strSearchName));
+        }
+        else if(strcmp(pdu->caData,SEARCH_USR_OFFLINE) == 0)
+        {
+            QMessageBox::information(this,"搜索",QString("%1:Offline")
+                                     .arg(OpeWidget::getInstance().getFriend()->m_strSearchName));
+        }
+
+        break;
+    }
+    case ENUM_MSG_TYPE_ADD_FRIEND_RESPOND: //类型为添加好友回复
+    {
+        QMessageBox::information(this,"添加好友",pdu->caData);
+        break;
+    }
+    case ENUM_MSG_TYPE_ADD_FRIEND_REQUEST: //类型为添加好友请求(由服务器转发)
+    {
+        char caName[32] = {'\0'};   //存储自己名字
+        strncpy(caName,pdu->caData+32,32);
+        int ret = QMessageBox::information(this,"添加好友",QString("%1 want to add you as friend?").arg(caName)
+                                 ,QMessageBox::Yes,QMessageBox::No);
+        PDU *respdu = mkPDU(0);
+        memcpy(respdu->caData,pdu->caData,32); //将pdu中被加好友的名字拷贝到respdu
+        memcpy(respdu->caData + 32,pdu->caData,32); //将pdu中自己的名字拷贝到respdu
+        if(ret == QMessageBox::Yes)
+        {
+            respdu->uiMsgType = ENUM_MSG_TYPE_ADD_FRIEND_AGGREE;
+        }
+        else
+        {
+            respdu->uiMsgType = ENUM_MSG_TYPE_ADD_FRIEND_REFUSE;
+        }
+
+        m_tcpSocket.write((char*)respdu,respdu->uiMsgLen);
+        free(respdu);
+        respdu = NULL;
+        break;
+    }
+    case ENUM_MSG_TYPE_ADD_FRIEND_AGGREE:  //被加好友同意申请
+    {
+        QMessageBox::information(this, "添加好友", QString("%1 已同意您的好友申请！").arg(pdu -> caData));
+        break;
+    }
+    case ENUM_MSG_TYPE_ADD_FRIEND_REFUSE:  //被加好友拒绝申请
+    {
+        QMessageBox::information(this, "添加好友", QString("%1 已拒绝您的好友申请！").arg(pdu -> caData));
+        break;
+    }
     default:
         break;
     }
@@ -160,6 +223,8 @@ void TcpClient::on_login_pb_clicked() //登录槽函数
     QString strPwd = ui->pwd_le->text();
     if(!strName.isEmpty() && !strPwd.isEmpty())
     {
+        m_strLoginName = strName; //保存登录的用户名
+
         PDU* pdu = mkPDU(0); //申请新空间
         pdu->uiMsgType = ENUM_MSG_TYPE_LOGIN_REQUEST; //确定消息类型为登录请求
         strncpy(pdu->caData,strName.toStdString().c_str(),32);//拷贝用户名进caData[64]

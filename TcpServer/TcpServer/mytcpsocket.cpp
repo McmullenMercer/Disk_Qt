@@ -1,5 +1,7 @@
 #include "mytcpsocket.h"
 #include <QDebug>
+#include <stdio.h>
+#include "mytcpserver.h"
 
 MyTcpSocket::MyTcpSocket()
 {
@@ -108,6 +110,104 @@ void MyTcpSocket::recvMsg() //数据接收槽函数
         respdu = NULL;
         break;
     }
+    case ENUM_MSG_TYPE_SEARCH_USR_REQUEST: //类型为搜索用户请求
+    {
+        int ret = OpeDB::getInstance().handleSearchUsr(pdu->caData);
+        PDU * respdu = mkPDU(0);
+        respdu->uiMsgType = ENUM_MSG_TYPE_SEARCH_USR_RESPOND;
+        if(ret == -1)
+        {
+            strcpy(respdu->caData,SEARCH_USR_NO);
+        }
+        else if(ret == 1)
+        {
+            strcpy(respdu->caData,SEARCH_USR_ONLINE);
+        }
+        else if(ret == 0)
+        {
+            strcpy(respdu->caData,SEARCH_USR_OFFLINE);
+        }
+        //通过socket将respdu发送出去
+        write((char *)respdu,respdu->uiPDULen);
+        //释放PDU
+        free(respdu);
+        respdu = NULL;
+        break;
+    }
+    case ENUM_MSG_TYPE_ADD_FRIEND_REQUEST: //类型为添加好友请求
+    {
+        //新建两个数组存放接收到的好友名和自己名
+        char caperName[32] = {'\0'};
+        char caName[32] = {'\0'};
+        //将接收到的好友名和自己名copy到caData
+        strncpy(caperName,pdu->caData,32); //前32位放好友名
+        strncpy(caName,pdu->caData+32,32); //后32位放自己名
+
+        int ret = OpeDB::getInstance().handleAddfriend(caperName,caName);
+        PDU * respdu = NULL;
+        if(ret == -1)
+        {
+            respdu = mkPDU(0);
+            respdu->uiMsgType = ENUM_MSG_TYPE_ADD_FRIEND_RESPOND;
+            strcpy(respdu->caData, UNKOW_ERROR);
+            //通过socket将respdu发送出去
+            write((char *)respdu,respdu->uiPDULen);
+            //释放PDU
+            free(respdu);
+            respdu = NULL;
+        }
+        else if(ret == 0)  //双方已经是好友
+        {
+            respdu = mkPDU(0);
+            respdu->uiMsgType = ENUM_MSG_TYPE_ADD_FRIEND_RESPOND;
+            strcpy(respdu->caData, EXISTED_FRIEND);
+            //通过socket将respdu发送出去
+            write((char *)respdu,respdu->uiPDULen);
+            //释放PDU
+            free(respdu);
+            respdu = NULL;
+        }
+        else if(ret == 1)  //双方不是好友且对方在线
+        {
+            MyTcpServer::getInstance().resend(caperName,pdu);
+
+        }
+        else if(ret == 2) //双方不是好友且对方不在线
+        {
+            respdu = mkPDU(0);
+            respdu->uiMsgType = ENUM_MSG_TYPE_ADD_FRIEND_RESPOND;
+            strcpy(respdu->caData, ADD_FRIEND_OFFLINE);
+            //通过socket将respdu发送出去
+            write((char *)respdu,respdu->uiPDULen);
+            //释放PDU
+            free(respdu);
+            respdu = NULL;
+        }
+        else if(3 == ret) //双方不是好友且对方不存在
+        {
+            respdu = mkPDU(0);
+            respdu->uiMsgType = ENUM_MSG_TYPE_ADD_FRIEND_RESPOND;
+            strcpy(respdu->caData, ADD_FRIEND_NO_EXIST);
+            //通过socket将respdu发送出去
+            write((char *)respdu,respdu->uiPDULen);
+            //释放PDU
+            free(respdu);
+            respdu = NULL;
+        }
+
+        break;
+    }
+    case ENUM_MSG_TYPE_ADD_FRIEND_AGGREE: //对方同意好友申请
+    {
+
+        break;
+    }
+    case ENUM_MSG_TYPE_ADD_FRIEND_REFUSE: //对方拒绝好友申请
+    {
+        break;
+    }
+
+
     default:
         break;
     }
@@ -126,4 +226,31 @@ void MyTcpSocket::clientOffline()  //处理客户端下线槽函数
     OpeDB::getInstance().handleOffline(m_strName.toStdString().c_str()); //调用处理客户端下线函数
     //将offline()信号发给socket，让其从列表中删除建立的客户端MyTcpSocket
     emit offline(this);//将信号发出去。this保存的是对象的地址
+}
+
+
+// 同意加好友
+void handleAddFriendAgree(PDU* pdu)
+{
+    char addedName[32] = {'\0'};
+    char sourceName[32] = {'\0'};
+    // 拷贝读取的信息
+    strncpy(addedName, pdu -> caData, 32);
+    strncpy(sourceName, pdu -> caData + 32, 32);
+
+    // 将新的好友关系信息写入数据库
+    OpeDB::getInstance().handleAddFriendAgree(addedName, sourceName);
+
+    // 服务器需要转发给发送好友请求方其被同意的消息
+    MyTcpServer::getInstance().resend(sourceName, pdu);
+}
+
+// 拒绝加好友
+void handleAddFriendReject(PDU* pdu)
+{
+    char sourceName[32] = {'\0'};
+    // 拷贝读取的信息
+    strncpy(sourceName, pdu -> caData + 32, 32);
+    // 服务器需要转发给发送好友请求方其被拒绝的消息
+    MyTcpServer::getInstance().resend(sourceName, pdu);
 }

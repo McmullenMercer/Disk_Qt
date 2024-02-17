@@ -28,6 +28,21 @@ void MyTcpServer::incomingConnection(qintptr handle)
 
 }
 
+void MyTcpServer::resend(const char *pername, PDU *pdu) //转发函数
+{
+    if(pername == NULL || pdu == NULL) return;
+
+    QString strName = pername;
+    for (int i = 0;i<m_tcpSocketList.size();i++)
+    {
+        if(strName == m_tcpSocketList.at(i)->getName())  //若匹配上了
+        {
+            m_tcpSocketList.at(i)->write((char *)pdu,pdu->uiMsgLen);  //则发送出去
+            break;
+        }
+    }
+}
+
 void MyTcpServer::deleteSocket(MyTcpSocket *mysocket)
 {
     //在建立的m_tcpSocketList中匹配*mysocket
