@@ -2,6 +2,7 @@
 #include <QDebug>
 #include <stdio.h>
 #include "mytcpserver.h"
+#include <QMessageBox>
 
 MyTcpSocket::MyTcpSocket()
 {
@@ -145,6 +146,7 @@ void MyTcpSocket::recvMsg() //数据接收槽函数
 
         int ret = OpeDB::getInstance().handleAddfriend(caperName,caName);
         PDU * respdu = NULL;
+
         if(ret == -1)
         {
             respdu = mkPDU(0);
@@ -152,7 +154,7 @@ void MyTcpSocket::recvMsg() //数据接收槽函数
             strcpy(respdu->caData, UNKOW_ERROR);
             //通过socket将respdu发送出去
             write((char *)respdu,respdu->uiPDULen);
-            //释放PDU
+            //释放PDU++++
             free(respdu);
             respdu = NULL;
         }
@@ -169,8 +171,7 @@ void MyTcpSocket::recvMsg() //数据接收槽函数
         }
         else if(ret == 1)  //双方不是好友且对方在线
         {
-            MyTcpServer::getInstance().resend(caperName,pdu);
-
+            MyTcpServer::getInstance().resend(caperName,pdu);//没有新建立pdu，转发的pdu类型仍为REQUEST
         }
         else if(ret == 2) //双方不是好友且对方不在线
         {
@@ -197,17 +198,23 @@ void MyTcpSocket::recvMsg() //数据接收槽函数
 
         break;
     }
-    case ENUM_MSG_TYPE_ADD_FRIEND_AGGREE: //对方同意好友申请
+    case ENUM_MSG_TYPE_ADD_FRIEND_AGGREE:
     {
-
+        char caPerName[32] = {'\0'};
+        char caName[32] = {'\0'};
+        strncpy(caPerName, pdu->caData, 32);
+        strncpy(caName, pdu->caData+32, 32);
+        OpeDB::getInstance().handleAddFriendAgree(caPerName, caName);
+        MyTcpServer::getInstance().resend(caName, pdu);
         break;
     }
-    case ENUM_MSG_TYPE_ADD_FRIEND_REFUSE: //对方拒绝好友申请
+    case ENUM_MSG_TYPE_ADD_FRIEND_REFUSE:
     {
+        char caName[32] = {'\0'};
+        strncpy(caName, pdu->caData+32, 32);
+        MyTcpServer::getInstance().resend(caName, pdu);
         break;
     }
-
-
     default:
         break;
     }
@@ -229,28 +236,4 @@ void MyTcpSocket::clientOffline()  //处理客户端下线槽函数
 }
 
 
-// 同意加好友
-void handleAddFriendAgree(PDU* pdu)
-{
-    char addedName[32] = {'\0'};
-    char sourceName[32] = {'\0'};
-    // 拷贝读取的信息
-    strncpy(addedName, pdu -> caData, 32);
-    strncpy(sourceName, pdu -> caData + 32, 32);
 
-    // 将新的好友关系信息写入数据库
-    OpeDB::getInstance().handleAddFriendAgree(addedName, sourceName);
-
-    // 服务器需要转发给发送好友请求方其被同意的消息
-    MyTcpServer::getInstance().resend(sourceName, pdu);
-}
-
-// 拒绝加好友
-void handleAddFriendReject(PDU* pdu)
-{
-    char sourceName[32] = {'\0'};
-    // 拷贝读取的信息
-    strncpy(sourceName, pdu -> caData + 32, 32);
-    // 服务器需要转发给发送好友请求方其被拒绝的消息
-    MyTcpServer::getInstance().resend(sourceName, pdu);
-}

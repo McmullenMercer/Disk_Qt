@@ -39,10 +39,8 @@ public:
     int handleAddfriend(const char * pername,const char * name);
 
     //处理同意好友函数
-    bool handleAddFriendAgree(const char *addedName, const char *sourceName);
+    void handleAddFriendAgree(const char *addedName, const char *sourceName);
 
-    // 根据用户名获取用户索引函数
-    int getIdByUserName(const char *name);
 
 signals:
 public slots:

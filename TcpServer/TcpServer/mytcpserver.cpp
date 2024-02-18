@@ -37,7 +37,7 @@ void MyTcpServer::resend(const char *pername, PDU *pdu) //转发函数
     {
         if(strName == m_tcpSocketList.at(i)->getName())  //若匹配上了
         {
-            m_tcpSocketList.at(i)->write((char *)pdu,pdu->uiMsgLen);  //则发送出去
+            m_tcpSocketList.at(i)->write((char *)pdu,pdu->uiPDULen);  //则发送出去
             break;
         }
     }

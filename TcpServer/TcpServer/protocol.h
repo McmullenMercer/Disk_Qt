@@ -39,6 +39,7 @@ enum ENUM_MSF_TYPE
 #define SEARCH_USR_ONLINE "online"
 #define SEARCH_USR_OFFLINE "offline"
 
+#define ADD_FRIEND_OK "add friend ok"
 #define UNKOW_ERROR "unkonw error"
 #define EXISTED_FRIEND "friend exist"
 #define ADD_FRIEND_OFFLINE "usr offline"

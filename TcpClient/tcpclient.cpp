@@ -158,35 +158,41 @@ void TcpClient::recvMsg() //数据接收槽函数
     }
     case ENUM_MSG_TYPE_ADD_FRIEND_REQUEST: //类型为添加好友请求(由服务器转发)
     {
-        char caName[32] = {'\0'};   //存储自己名字
-        strncpy(caName,pdu->caData+32,32);
+        char caName[32] = {'\0'};
+        strncpy(caName,pdu->caData+32,32); //将自己名字拷贝到caName
+        qDebug()<<"添加好友";
         int ret = QMessageBox::information(this,"添加好友",QString("%1 want to add you as friend?").arg(caName)
                                  ,QMessageBox::Yes,QMessageBox::No);
+        qDebug()<<"结果为："<<ret;
         PDU *respdu = mkPDU(0);
-        memcpy(respdu->caData,pdu->caData,32); //将pdu中被加好友的名字拷贝到respdu
-        memcpy(respdu->caData + 32,pdu->caData,32); //将pdu中自己的名字拷贝到respdu
+        memcpy(respdu->caData,pdu->caData,64); //将pdu中被加好友的名字拷贝到respdu
+        //memcpy(respdu->caData + 32,pdu->caData,32); //将pdu中自己的名字拷贝到respdu
         if(ret == QMessageBox::Yes)
         {
             respdu->uiMsgType = ENUM_MSG_TYPE_ADD_FRIEND_AGGREE;
+            qDebug()<<"Yes";
         }
         else
         {
             respdu->uiMsgType = ENUM_MSG_TYPE_ADD_FRIEND_REFUSE;
         }
-
-        m_tcpSocket.write((char*)respdu,respdu->uiMsgLen);
+        m_tcpSocket.write((char*)respdu,respdu->uiPDULen);//////////////////////////////////长度是uiPDULen
         free(respdu);
         respdu = NULL;
         break;
     }
-    case ENUM_MSG_TYPE_ADD_FRIEND_AGGREE:  //被加好友同意申请
+    case ENUM_MSG_TYPE_ADD_FRIEND_AGGREE:
     {
-        QMessageBox::information(this, "添加好友", QString("%1 已同意您的好友申请！").arg(pdu -> caData));
+        char caPerName[32] = {'\0'};
+        memcpy(caPerName, pdu->caData, 32);
+        QMessageBox::information(this, "添加好友", QString("添加%1好友成功").arg(caPerName));
         break;
     }
-    case ENUM_MSG_TYPE_ADD_FRIEND_REFUSE:  //被加好友拒绝申请
+    case ENUM_MSG_TYPE_ADD_FRIEND_REFUSE:
     {
-        QMessageBox::information(this, "添加好友", QString("%1 已拒绝您的好友申请！").arg(pdu -> caData));
+        char caPerName[32] = {'\0'};
+        memcpy(caPerName, pdu->caData, 32);
+        QMessageBox::information(this, "添加好友", QString("添加%1好友失败").arg(caPerName));
         break;
     }
     default:
