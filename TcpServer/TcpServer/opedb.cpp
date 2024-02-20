@@ -199,5 +199,50 @@ void OpeDB::handleAddFriendAgree(const char *pername, const char *name)
 
 }
 
+//刷新好友列表函数
+QStringList OpeDB::handleFlushFriend(const char *name)
+{
+    QStringList strFriendList;  //存放在线好友的名字
+    strFriendList.clear();
+
+    if(name == NULL) return strFriendList;
+
+    //操作数据库
+    QString data = QString("select name from usrInfo where online = 1 and id in (select id from friend where friendId = (select id from usrInfo where name = \'%1\'))").arg(name);
+    QSqlQuery query;
+    query.exec(data);
+    while (query.next())
+    {
+        strFriendList.append(query.value(0).toString());
+        qDebug()<<query.value(0).toString();
+    }
+
+    //query.clear();
+    data = QString("select name from usrInfo where online = 1 and id in (select friendId from friend where id = (select id from usrInfo where name = \'%1\'))").arg(name);
+    query.exec(data);
+    while (query.next())
+    {
+        strFriendList.append(query.value(0).toString());
+        qDebug()<<query.value(0).toString();
+    }
+    return strFriendList;
+
+}
+
+bool OpeDB::handleDelFriend(const char *name, const char *friendname)
+{
+    if(name == NULL || friendname == NULL) return false;
+
+    QString data = QString("delete from friend where id = (select id from usrInfo where name =\'%1\') and friendId = (select id from usrInfo where name =\'%2\')").arg(name).arg(friendname);
+    qDebug()<<data;
+    QSqlQuery query;
+    query.exec(data);
+
+    data = QString("delete from friend where friendId = (select id from usrInfo where name =\'%1\') and id = (select id from usrInfo where name =\'%2\')").arg(name).arg(friendname);
+    query.exec(data);
+
+    return true;
+}
+
 
 

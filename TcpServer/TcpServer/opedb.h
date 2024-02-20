@@ -41,6 +41,12 @@ public:
     //处理同意好友函数
     void handleAddFriendAgree(const char *addedName, const char *sourceName);
 
+    //处理刷新好友列表函数
+    QStringList handleFlushFriend(const char *name);
+
+    //处理删除好友函数
+    bool handleDelFriend(const char * name,const char * friendname);
+
 
 signals:
 public slots:

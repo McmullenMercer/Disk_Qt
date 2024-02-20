@@ -23,8 +23,14 @@ enum ENUM_MSF_TYPE
     ENUM_MSG_TYPE_ADD_FRIEND_RESPOND,  //添加好友回复
     ENUM_MSG_TYPE_ADD_FRIEND_AGGREE,  //同意添加好友
     ENUM_MSG_TYPE_ADD_FRIEND_REFUSE,  //拒绝添加好友
-//    ENUM_MSG_TYPE_REQUEST,  //请求
-//    ENUM_MSG_TYPE_RESPOND,  //回复
+    ENUM_MSG_TYPE_FLUSH_FRIEND_REQUEST,  //刷新好友请求
+    ENUM_MSG_TYPE_FLUSH_FRIEND_RESPOND,  //刷新好友回复
+    ENUM_MSG_TYPE_DELETE_FRIEND_REQUEST,  //删除好友请求
+    ENUM_MSG_TYPE_DELETE_FRIEND_RESPOND,  //删除好友回复
+    ENUM_MSG_TYPE_PRIVATE_CHAT_REQUEST,  //私聊请求
+    ENUM_MSG_TYPE_PRIVATE_CHAT_RESPOND,  //私聊回复
+    ENUM_MSG_TYPE_GROUP_CHAT_REQUEST,  //群聊请求
+    ENUM_MSG_TYPE_GROUP_CHAT_RESPOND,  //群聊回复
 
     ENUM_MSG_TYPE_MAX = 0x00ffffff, //最大
 };
@@ -44,6 +50,8 @@ enum ENUM_MSF_TYPE
 #define EXISTED_FRIEND "friend exist"
 #define ADD_FRIEND_OFFLINE "usr offline"
 #define ADD_FRIEND_NO_EXIST "usr not exist"
+
+#define DEL_FRIEND_OK "delete friend OK"
 
 // 设计通讯协议
 struct PDU // 弹性结构体

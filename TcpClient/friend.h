@@ -18,6 +18,10 @@ public:
     explicit Friend(QWidget *parent = nullptr);
     void showAllonlinUsr(PDU *pdu);
 
+    void updateFriendList(PDU *pdu); //更新好友列表函数
+    void updateGroupMsg(PDU *pdu);   //更新群聊信息函数
+
+
     QString m_strSearchName;// 改变量临时存储所搜索的名字
 
 
@@ -26,6 +30,10 @@ signals:
 public slots:
     void showOnline();
     void searchUsr();
+    void flushFriend();   //刷新好友列表槽函数
+    void delFriend();     //删除好友槽函数
+    void privateChat();   //私聊槽函数
+    void groupChat();     //群聊槽函数
 
 private:
     QTextEdit *m_pShowMsgTE;

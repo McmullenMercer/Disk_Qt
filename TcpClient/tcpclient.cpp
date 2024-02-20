@@ -5,6 +5,7 @@
 #include <QMessageBox>
 #include <QHostAddress>
 #include <QLineEdit>
+#include "privatechat.h"
 
 TcpClient::TcpClient(QWidget *parent)
     : QWidget(parent)
@@ -181,18 +182,62 @@ void TcpClient::recvMsg() //数据接收槽函数
         respdu = NULL;
         break;
     }
-    case ENUM_MSG_TYPE_ADD_FRIEND_AGGREE:
+    case ENUM_MSG_TYPE_ADD_FRIEND_AGGREE:  //类型为同意添加好友
     {
         char caPerName[32] = {'\0'};
         memcpy(caPerName, pdu->caData, 32);
         QMessageBox::information(this, "添加好友", QString("添加%1好友成功").arg(caPerName));
         break;
     }
-    case ENUM_MSG_TYPE_ADD_FRIEND_REFUSE:
+    case ENUM_MSG_TYPE_ADD_FRIEND_REFUSE:  //类型为拒绝添加好友
     {
         char caPerName[32] = {'\0'};
         memcpy(caPerName, pdu->caData, 32);
         QMessageBox::information(this, "添加好友", QString("添加%1好友失败").arg(caPerName));
+        break;
+    }
+    case ENUM_MSG_TYPE_FLUSH_FRIEND_RESPOND: //类型为刷新好友回复
+    {
+        OpeWidget::getInstance().getFriend()->updateFriendList(pdu);
+        break;
+    }
+    case ENUM_MSG_TYPE_DELETE_FRIEND_REQUEST: //类型为删除好友请求
+    {
+        char caName[32]= {'\0'};
+        memcpy(caName,pdu->caData,32);
+        QMessageBox::information(this,"删除好友",QString("%1 删除了你").arg(caName));
+        break;
+    }
+    case ENUM_MSG_TYPE_DELETE_FRIEND_RESPOND: //类型为删除好友回复
+    {
+        QMessageBox::information(this,"删除好友","删除好友成功");
+        break;
+    }
+    case ENUM_MSG_TYPE_PRIVATE_CHAT_REQUEST: //类型为私聊请求
+    {
+        if(PrivateChat::getInstance().isHidden())
+        {
+            PrivateChat::getInstance().show();
+            char caName[32];
+            memcpy(caName,pdu->caData,32);
+            QString strSendName = caName;
+            PrivateChat::getInstance().setChatName(strSendName);
+            PrivateChat::getInstance().updateMsg(pdu);
+        }
+        else
+        {
+            char caName[32];
+            memcpy(caName,pdu->caData,32);
+            QString strSendName = caName;
+            PrivateChat::getInstance().setChatName(strSendName);
+            PrivateChat::getInstance().updateMsg(pdu);
+        }
+
+        break;
+    }
+    case ENUM_MSG_TYPE_GROUP_CHAT_REQUEST: //类型为群聊请求
+    {
+        OpeWidget::getInstance().getFriend()->updateGroupMsg(pdu);
         break;
     }
     default:

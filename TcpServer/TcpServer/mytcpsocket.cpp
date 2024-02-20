@@ -198,7 +198,7 @@ void MyTcpSocket::recvMsg() //数据接收槽函数
 
         break;
     }
-    case ENUM_MSG_TYPE_ADD_FRIEND_AGGREE:
+    case ENUM_MSG_TYPE_ADD_FRIEND_AGGREE:  //类型为同意好友申请
     {
         char caPerName[32] = {'\0'};
         char caName[32] = {'\0'};
@@ -208,11 +208,89 @@ void MyTcpSocket::recvMsg() //数据接收槽函数
         MyTcpServer::getInstance().resend(caName, pdu);
         break;
     }
-    case ENUM_MSG_TYPE_ADD_FRIEND_REFUSE:
+    case ENUM_MSG_TYPE_ADD_FRIEND_REFUSE:  //类型为拒绝好友申请
     {
         char caName[32] = {'\0'};
         strncpy(caName, pdu->caData+32, 32);
         MyTcpServer::getInstance().resend(caName, pdu);
+        break;
+    }
+    case ENUM_MSG_TYPE_FLUSH_FRIEND_REQUEST://类型为刷新好友请求
+    {
+        char caName[32] = {'\0'};
+        strncpy(caName, pdu->caData, 32);
+        QStringList ret = OpeDB::getInstance().handleFlushFriend(caName);  //获取在线好友的名字
+        //将获取到的名字打包并发送出去
+        //新建PDU
+        uint uiMsgLen = ret.size()*32;  //一个名字占32位
+        PDU *respdu = mkPDU(uiMsgLen);
+        respdu->uiMsgType = ENUM_MSG_TYPE_FLUSH_FRIEND_RESPOND;
+        //循环将ret里的名字拷贝到新建立的pdu中
+        for (int i = 0;i<ret.size();i++)
+        {
+            memcpy((char *)(respdu->caMsg)+i*32        //目标respdu中名字的起始位置，临时转化为char *型每+1位置往后偏1
+                   ,ret.at(i).toStdString().c_str()    //原ret中名字的起始位置
+                   ,ret.at(i).size());                 //大小
+        }
+        //发送pdu
+        write((char *) respdu,respdu->uiPDULen);
+        //释放pdu
+        free(respdu);
+        respdu = NULL;
+        break;
+    }
+    case ENUM_MSG_TYPE_DELETE_FRIEND_REQUEST: //类型为删除好友请求
+    {
+
+        //新建两个数组存放接收到的用户名和好友名
+        char caName[32] = {'\0'};
+        char cafriendName[32] = {'\0'};
+        //将接收到的用户名和密码copy到caData
+        strncpy(caName,pdu->caData,32); //同样前32位放用户名
+        strncpy(cafriendName,pdu->caData+32,32); //后32位放好友名
+
+        OpeDB::getInstance().handleDelFriend(caName,cafriendName);
+
+        //新建回复pdu
+        PDU* respdu = mkPDU(0);
+        respdu->uiMsgType = ENUM_MSG_TYPE_DELETE_FRIEND_RESPOND;
+        strcpy(respdu->caData,DEL_FRIEND_OK); //将回复信息放入respdu的caData
+        //发送pdu
+        write((char *) respdu,respdu->uiPDULen);
+        //释放pdu
+        free(respdu);
+        respdu = NULL;
+
+
+        MyTcpServer::getInstance().resend(cafriendName,pdu);
+
+
+
+        break;
+    }
+    case ENUM_MSG_TYPE_PRIVATE_CHAT_REQUEST: //类型为私聊请求
+    {
+        //新建两个数组存放接收到的用户名和好友名
+        char caName[32] = {'\0'};
+        char cafriendName[32] = {'\0'};
+        //将接收到的用户名和密码copy到caData
+        strncpy(caName,pdu->caData,32); //同样前32位放用户名
+        strncpy(cafriendName,pdu->caData+32,32); //后32位放好友名
+        qDebug()<<cafriendName;
+        MyTcpServer::getInstance().resend(cafriendName,pdu); //将私聊请求转发给聊天对象客户端
+        break;
+    }
+    case ENUM_MSG_TYPE_GROUP_CHAT_REQUEST: //类型为群聊请求
+    {
+        char caName[32] = {'\0'};
+        strncpy(caName, pdu->caData, 32);
+        QStringList onlineFriend = OpeDB::getInstance().handleFlushFriend(caName);  //获取在线好友的名字
+        QString tmp;
+        for(int i = 0;i<onlineFriend.size();i++)
+        {
+            tmp = onlineFriend.at(i);
+            MyTcpServer::getInstance().resend(tmp.toStdString().c_str(),pdu); //循环转发群发消息
+        }
         break;
     }
     default:
