@@ -44,6 +44,9 @@ enum ENUM_MSF_TYPE
     ENUM_MSG_TYPE_RENAME_FILE_REQUEST,  //重命名文件夹请求
     ENUM_MSG_TYPE_RENAME_FILE_RESPOND,  //重命名文件夹回复
 
+    ENUM_MSG_TYPE_ENTER_DIR_REQUEST,    //查看文件夹请求
+    ENUM_MSG_TYPE_ENTER_DIR_RESPOND,    //查看文件夹回复
+
     ENUM_MSG_TYPE_MAX = 0x00ffffff, //最大
 };
 
@@ -74,6 +77,8 @@ enum ENUM_MSF_TYPE
 
 #define RENAME_DIR_OK "rename fir successfully"
 #define RENAME_DIR_FAILED "rename fir failed"
+
+#define ENTER_DIR_FAILED "enter dir failed: not dir"
 
 struct FileInfo
 {

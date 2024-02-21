@@ -5,6 +5,8 @@
 
 Book::Book(QWidget *parent) : QWidget(parent)  //构造函数
 {
+    m_strEnterDir.clear();
+
     m_pBookListW = new QListWidget;  //列表
     m_pReturnPB = new QPushButton("返回");    //返回按钮
     m_pCreateDirPB = new QPushButton("创建文件夹");   //创建文件夹按钮
@@ -46,6 +48,10 @@ Book::Book(QWidget *parent) : QWidget(parent)  //构造函数
             , this,SLOT(delDir()));
     connect(m_pRenamePB,SIGNAL(clicked(bool))
             , this,SLOT(renameFile()));
+    connect(m_pBookListW,SIGNAL(doubleClicked(QModelIndex))
+            , this,SLOT(enterDir(QModelIndex)));
+    connect(m_pReturnPB,SIGNAL(clicked(bool))
+            , this,SLOT(returnpre()));
 
 }
 
@@ -79,7 +85,6 @@ void Book::updateFileList(PDU *pdu)
 
     }
 }
-
 
 void Book::createDir()
 {
@@ -191,4 +196,61 @@ void Book::renameFile()
             QMessageBox::warning(this,"重命名文件夹","文件夹名不能为空");
         }
     }
+}
+
+void Book::enterDir(const QModelIndex &index)
+{
+    QString strDirName = index.data().toString();  //获取双击目标
+    //qDebug()<<strDirName;
+    m_strEnterDir = strDirName; //保存目标文件名，用于更新路径
+
+    QString strCurPath = TcpClient::getInstance().curPath(); //获取当前路径
+
+    PDU *pdu = mkPDU(strCurPath.size()+1);
+    pdu->uiMsgType = ENUM_MSG_TYPE_ENTER_DIR_REQUEST;
+
+    memcpy(pdu->caData,strDirName.toStdString().c_str(),strDirName.size());  //文件夹名放在caData中
+    memcpy(pdu->caMsg,strCurPath.toStdString().c_str(),strCurPath.size());   //路径放在caMsg中
+
+    TcpClient::getInstance().getTcpSocket().write((char*) pdu,pdu->uiPDULen);
+
+    free(pdu);
+    pdu = NULL;
+
+
+}
+
+void Book::returnpre()
+{
+    QString strCurPath = TcpClient::getInstance().curPath(); //获取当前路径
+    QString strRootPath = "./"+TcpClient::getInstance().loginName();  //获取根目录
+    if(strCurPath == strRootPath)
+    {
+        QMessageBox::warning(this,"返回","返回失败：没有上层目录");
+    }
+    else
+    {
+        int index = strCurPath.lastIndexOf('/'); //获取最后一个 '/' 的编号
+        strCurPath.remove(index,strCurPath.size()-index);
+        qDebug()<<strCurPath;
+        TcpClient::getInstance().setCurPath(strCurPath);
+        qDebug()<<strCurPath;
+
+        clearEnterDir();
+
+        flushFile(); //直接调用刷新函数
+
+    }
+
+
+}
+
+void Book::clearEnterDir()
+{
+    m_strEnterDir.clear();
+}
+
+QString Book::EnterDir()
+{
+    return m_strEnterDir;
 }

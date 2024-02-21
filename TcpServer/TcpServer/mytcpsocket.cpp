@@ -454,6 +454,67 @@ void MyTcpSocket::recvMsg() //数据接收槽函数
 
         break;
     }
+    case ENUM_MSG_TYPE_ENTER_DIR_REQUEST: //类型为查看文件夹请求
+    {
+        char caDirName[32];  //文件夹名字
+        strncpy(caDirName,pdu->caData,32);
+
+        char *pPath = new char[pdu->uiMsgLen]; //路径
+        memcpy(pPath,pdu->caMsg,pdu->uiMsgLen);
+
+        //拼接完整路径
+        QString strPath = QString("%1/%2").arg(pPath).arg(caDirName);
+        qDebug()<<strPath;
+
+        QFileInfo fileInfo(strPath);  //用来判断路径对应文件类型
+        PDU *respdu = NULL;
+        if(fileInfo.isDir())
+        {
+            QDir dir(strPath);
+            QFileInfoList fileInfoList = dir.entryInfoList();
+
+            //新建pdu
+            int iFileCount = fileInfoList.size();
+            respdu = mkPDU(sizeof(FileInfo)*iFileCount);
+            respdu->uiMsgType = ENUM_MSG_TYPE_FLUSH_FILE_RESPOND;
+
+            FileInfo* pFileInfo = NULL;
+            QString strFileName;
+            for(int i =0;i<fileInfoList.size();i++)
+            {
+                pFileInfo = (FileInfo*)(respdu->caMsg)+i; //将respdu临时传化为FileInfo类型，便于存储偏移（结构体数组）
+                strFileName = fileInfoList[i].fileName();
+
+                memcpy(pFileInfo->caFileName,strFileName.toStdString().c_str(),strFileName.size()); //拷贝文件名
+                if(fileInfoList.at(i).isDir())
+                {
+                    pFileInfo->iFileType = 0; //0表示类型为文件夹
+                }else if(fileInfoList.at(i).isFile())
+                {
+                    pFileInfo->iFileType = 1; //1表示类型为常规文件
+                }
+
+            }
+            write((char*)respdu,respdu->uiPDULen);
+
+            free(respdu);
+            respdu = NULL;
+
+        }
+        else if(fileInfo.isFile())
+        {
+            respdu = mkPDU(0);
+            respdu->uiMsgType = ENUM_MSG_TYPE_ENTER_DIR_RESPOND;
+            strcpy(respdu->caData,ENTER_DIR_FAILED);
+
+            write((char*)respdu,respdu->uiPDULen);
+
+            free(respdu);
+            respdu = NULL;
+        }
+
+        break;
+    }
     default:
         break;
     }

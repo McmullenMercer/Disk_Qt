@@ -27,6 +27,8 @@ public:
 
     QString curPath();
 
+    void setCurPath(QString strCurPath);
+
 
 public slots:  //槽函数，是信号的处理函数，与普通函数区分
     void showConnect();  //指示服务器连接槽函数

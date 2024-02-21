@@ -88,6 +88,11 @@ QString TcpClient::curPath()
     return m_strCurPath;
 }
 
+void TcpClient::setCurPath(QString strCurPath)
+{
+    m_strCurPath = strCurPath;
+}
+
 void TcpClient::showConnect() //指示服务器连接槽函数
 {
     QMessageBox::information(this,"连接服务器","连接服务器成功");
@@ -254,6 +259,14 @@ void TcpClient::recvMsg() //数据接收槽函数
     case ENUM_MSG_TYPE_FLUSH_FILE_RESPOND: //类型为刷新文件回复
     {
         OpeWidget::getInstance().getBook()->updateFileList(pdu);
+        QString strEnterDir = OpeWidget::getInstance().getBook()->EnterDir();
+
+        OpeWidget::getInstance().getBook()->clearEnterDir();
+        if(!strEnterDir.isEmpty())
+        {
+            m_strCurPath = m_strCurPath+"/"+strEnterDir; //更新重命名后的当前路径
+            qDebug()<<m_strCurPath;
+        }
         break;
     }
     case ENUM_MSG_TYPE_DEL_DIR_RESPOND: //类型为删除文件夹回复
@@ -263,7 +276,14 @@ void TcpClient::recvMsg() //数据接收槽函数
     }
     case ENUM_MSG_TYPE_RENAME_FILE_RESPOND: //类型为重命名文件夹回复
     {
-        QMessageBox::information(this,"删除文件夹",pdu->caData);
+
+        QMessageBox::information(this,"重命名文件",pdu->caData);
+        break;
+    }
+    case ENUM_MSG_TYPE_ENTER_DIR_RESPOND://类型为查看文件夹回复
+    {
+        OpeWidget::getInstance().getBook()->clearEnterDir();
+        QMessageBox::information(this,"查看文件夹",pdu->caData);
         break;
     }
     default:
