@@ -83,6 +83,11 @@ QString TcpClient::loginName()
     return m_strLoginName;
 }
 
+QString TcpClient::curPath()
+{
+    return m_strCurPath;
+}
+
 void TcpClient::showConnect() //指示服务器连接槽函数
 {
     QMessageBox::information(this,"连接服务器","连接服务器成功");
@@ -116,6 +121,7 @@ void TcpClient::recvMsg() //数据接收槽函数
     {
         if(strcmp(pdu->caData,LOGIN_OK) == 0)
         {
+            m_strCurPath = QString("./%1").arg(m_strLoginName); //保存当前根路径
             QMessageBox::information(this,"登录",LOGIN_OK);
             OpeWidget::getInstance().show();// 调用单例
             this->hide();
@@ -238,6 +244,26 @@ void TcpClient::recvMsg() //数据接收槽函数
     case ENUM_MSG_TYPE_GROUP_CHAT_REQUEST: //类型为群聊请求
     {
         OpeWidget::getInstance().getFriend()->updateGroupMsg(pdu);
+        break;
+    }
+    case ENUM_MSG_TYPE_CREATE_DIR_RESPOND: //类型为新建文件夹回复
+        {
+        QMessageBox::information(this,"新建文件夹",pdu->caData);
+        break;
+    }
+    case ENUM_MSG_TYPE_FLUSH_FILE_RESPOND: //类型为刷新文件回复
+    {
+        OpeWidget::getInstance().getBook()->updateFileList(pdu);
+        break;
+    }
+    case ENUM_MSG_TYPE_DEL_DIR_RESPOND: //类型为删除文件夹回复
+    {
+        QMessageBox::information(this,"删除文件夹",pdu->caData);
+        break;
+    }
+    case ENUM_MSG_TYPE_RENAME_FILE_RESPOND: //类型为重命名文件夹回复
+    {
+        QMessageBox::information(this,"删除文件夹",pdu->caData);
         break;
     }
     default:

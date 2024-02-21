@@ -278,6 +278,7 @@ Makefile: TcpClient.pro ../../../5.14.2/mingw73_32/mkspecs/win32-g++/qmake.conf 
 		../../../5.14.2/mingw73_32/lib/Qt5Core.prl \
 		../../../5.14.2/mingw73_32/lib/qtmain.prl \
 		../../../5.14.2/mingw73_32/mkspecs/features/build_pass.prf \
+		FileType.qrc \
 		config.qrc
 	$(QMAKE) -o Makefile TcpClient.pro -spec win32-g++ "CONFIG+=debug" "CONFIG+=qml_debug"
 ../../../5.14.2/mingw73_32/mkspecs/features/spec_pre.prf:
@@ -488,6 +489,7 @@ TcpClient.pro:
 ../../../5.14.2/mingw73_32/lib/Qt5Core.prl:
 ../../../5.14.2/mingw73_32/lib/qtmain.prl:
 ../../../5.14.2/mingw73_32/mkspecs/features/build_pass.prf:
+FileType.qrc:
 config.qrc:
 qmake: FORCE
 	@$(QMAKE) -o Makefile TcpClient.pro -spec win32-g++ "CONFIG+=debug" "CONFIG+=qml_debug"

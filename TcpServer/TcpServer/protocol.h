@@ -32,6 +32,18 @@ enum ENUM_MSF_TYPE
     ENUM_MSG_TYPE_GROUP_CHAT_REQUEST,  //群聊请求
     ENUM_MSG_TYPE_GROUP_CHAT_RESPOND,  //群聊回复
 
+    ENUM_MSG_TYPE_CREATE_DIR_REQUEST,  //新建文件夹请求
+    ENUM_MSG_TYPE_CREATE_DIR_RESPOND,  //新建文件夹回复
+
+    ENUM_MSG_TYPE_FLUSH_FILE_REQUEST,  //刷新文件请求
+    ENUM_MSG_TYPE_FLUSH_FILE_RESPOND,  //刷新文件回复
+
+    ENUM_MSG_TYPE_DEL_DIR_REQUEST,  //删除文件夹请求
+    ENUM_MSG_TYPE_DEL_DIR_RESPOND,  //删除文件夹回复
+
+    ENUM_MSG_TYPE_RENAME_FILE_REQUEST,  //重命名文件夹请求
+    ENUM_MSG_TYPE_RENAME_FILE_RESPOND,  //重命名文件夹回复
+
     ENUM_MSG_TYPE_MAX = 0x00ffffff, //最大
 };
 
@@ -52,6 +64,22 @@ enum ENUM_MSF_TYPE
 #define ADD_FRIEND_NO_EXIST "usr not exist"
 
 #define DEL_FRIEND_OK "delete friend OK"
+
+#define DIR_NOT_EXIST "cur dir not exist"
+#define FILE_NAME_EXIST "file name exist"
+#define CREAT_DIR_OK "create dir successfully"
+
+#define DEL_DIR_OK "delete dir successfully"
+#define DEL_DIR_FAILED "delete dir failed:is not dir"
+
+#define RENAME_DIR_OK "rename fir successfully"
+#define RENAME_DIR_FAILED "rename fir failed"
+
+struct FileInfo
+{
+    char caFileName[32]; //文件名字
+    int iFileType; //文件类型
+};
 
 // 设计通讯协议
 struct PDU // 弹性结构体

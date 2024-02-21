@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include "mytcpserver.h"
 #include <QMessageBox>
+#include <QDir>
+#include <QFileInfoList>
 
 MyTcpSocket::MyTcpSocket()
 {
@@ -46,6 +48,8 @@ void MyTcpSocket::recvMsg() //数据接收槽函数
         if(ret)
         {
             strcpy(respdu->caData,REGI_OK);
+            QDir dir;
+            qDebug()<<dir.mkdir(QString("./%1").arg(caName)); //创建一个以用户名命名的文件夹
         }
         else
         {
@@ -291,6 +295,163 @@ void MyTcpSocket::recvMsg() //数据接收槽函数
             tmp = onlineFriend.at(i);
             MyTcpServer::getInstance().resend(tmp.toStdString().c_str(),pdu); //循环转发群发消息
         }
+        break;
+    }
+    case ENUM_MSG_TYPE_CREATE_DIR_REQUEST: //类型为新建文件夹请求
+    {
+        QDir dir;
+        QString strCurPath = QString("%1").arg((char*)(pdu->caMsg));
+        bool ret = dir.exists(strCurPath);
+
+        PDU *respdu = NULL;
+        if(ret)  //当前目录存在
+        {
+            char caNewDir[32] = {'\0'};
+            memcpy(caNewDir,pdu->caData+32,32);
+            QString strNewPath = strCurPath + "/" + caNewDir;
+            qDebug()<<strNewPath;
+            ret = dir.exists(strNewPath);
+            qDebug()<<ret;
+            if(ret)  //创建的文件已存在
+            {
+                respdu = mkPDU(0);
+                respdu->uiMsgType = ENUM_MSG_TYPE_CREATE_DIR_RESPOND;
+                strcpy(respdu->caData,FILE_NAME_EXIST);
+            }
+            else   //创建的文件不存在
+            {
+                dir.mkdir(strNewPath);
+                respdu = mkPDU(0);
+                respdu->uiMsgType = ENUM_MSG_TYPE_CREATE_DIR_RESPOND;
+                strcpy(respdu->caData,CREAT_DIR_OK);
+            }
+        }
+        else    //当前目录不存在
+        {
+            respdu = mkPDU(0);
+            respdu->uiMsgType = ENUM_MSG_TYPE_CREATE_DIR_RESPOND;
+            strcpy(respdu->caData,DIR_NOT_EXIST);
+        }
+
+        write((char*)respdu,respdu->uiPDULen);
+        free(respdu);
+        respdu = NULL;
+        break;
+    }
+    case ENUM_MSG_TYPE_FLUSH_FILE_REQUEST: //类型为刷新文件请求
+    {
+        char *pCurPath = new char[pdu->uiMsgLen];  //根据pdu中的uiMsgLen确定new出的空间大小
+        memcpy(pCurPath,pdu->caMsg,pdu->uiMsgLen); //将pdu中的caMsg，即当前目录拷贝出来
+        QDir dir(pCurPath);
+        QFileInfoList fileInfoList = dir.entryInfoList();
+
+        //新建pdu
+        int iFileCount = fileInfoList.size();
+        PDU *respdu = mkPDU(sizeof(FileInfo)*iFileCount);
+        respdu->uiMsgType = ENUM_MSG_TYPE_FLUSH_FILE_RESPOND;
+
+        FileInfo* pFileInfo = NULL;
+        QString strFileName;
+        for(int i =0;i<fileInfoList.size();i++)
+        {
+            pFileInfo = (FileInfo*)(respdu->caMsg)+i; //将respdu临时传化为FileInfo类型，便于存储偏移（结构体数组）
+            strFileName = fileInfoList[i].fileName();
+
+            memcpy(pFileInfo->caFileName,strFileName.toStdString().c_str(),strFileName.size()); //拷贝文件名
+            if(fileInfoList.at(i).isDir())
+            {
+                pFileInfo->iFileType = 0; //0表示类型为文件夹
+            }else if(fileInfoList.at(i).isFile())
+            {
+                pFileInfo->iFileType = 1; //1表示类型为常规文件
+            }
+
+//            qDebug()<<fileInfoList.at(i).fileName()
+//                    <<fileInfoList.at(i).size()
+//                    <<"文件夹"<<fileInfoList.at(i).isDir()
+//                   <<"常规文件"<<fileInfoList.at(i).isFile();
+        }
+        write((char*)respdu,respdu->uiPDULen);
+
+        free(respdu);
+        respdu = NULL;
+        break;
+    }
+    case ENUM_MSG_TYPE_DEL_DIR_REQUEST: //类型为删除文件夹请求
+    {
+        char caName[32];  //文件夹名字
+        strcpy(caName,pdu->caData);
+
+        char *pPath = new char[pdu->uiMsgLen]; //路径
+        memcpy(pPath,pdu->caMsg,pdu->uiMsgLen);
+
+        //拼接得到完整路径
+        QString strPath = QString("%1/%2").arg(pPath).arg(caName);
+        qDebug()<<strPath;
+
+        QFileInfo fileInfo(strPath);
+        bool ret = false;
+        if(fileInfo.isDir())
+        {
+            QDir dir;
+            dir.setPath(strPath);
+            ret = dir.removeRecursively(); //删除文件夹包含的所有文件
+        }
+        else if(fileInfo.isFile()) ret = false;
+
+        PDU * respdu = NULL;
+        if(ret)
+        {
+            respdu =  mkPDU(0);
+            respdu->uiMsgType = ENUM_MSG_TYPE_DEL_DIR_RESPOND;
+            memcpy(respdu->caData,DEL_DIR_OK,strlen(DEL_DIR_OK));
+        }
+        else
+        {
+            respdu =  mkPDU(0);
+            respdu->uiMsgType = ENUM_MSG_TYPE_DEL_DIR_RESPOND;
+            memcpy(respdu->caData,DEL_DIR_FAILED,strlen(DEL_DIR_FAILED));
+        }
+        write((char*)respdu,respdu->uiPDULen);
+
+        free(respdu);
+        respdu = NULL;
+        break;
+    }
+    case ENUM_MSG_TYPE_RENAME_FILE_REQUEST: //类型为重命名文件夹请求
+    {
+        char caOldName[32];  //旧名字
+        char caNewName[32];  //新名字
+        strncpy(caOldName,pdu->caData,32);
+        strncpy(caNewName,pdu->caData+32,32);
+
+        char *pPath = new char[pdu->uiMsgLen]; //路径
+        memcpy(pPath,pdu->caMsg,pdu->uiMsgLen);
+
+        //拼接得到路径
+        QString strOldPath = QString("%1/%2").arg(pPath).arg(caOldName);
+        QString strNewPath = QString("%1/%2").arg(pPath).arg(caNewName);
+
+        QDir dir;
+        bool ret = dir.rename(strOldPath,strNewPath);
+        PDU * respdu = mkPDU(0);
+        if(ret)
+        {
+            respdu->uiMsgType = ENUM_MSG_TYPE_RENAME_FILE_RESPOND;
+            memcpy(respdu->caData,RENAME_DIR_OK,strlen(RENAME_DIR_OK));
+
+        }else
+        {
+            respdu->uiMsgType = ENUM_MSG_TYPE_RENAME_FILE_RESPOND;
+            memcpy(respdu->caData,RENAME_DIR_FAILED,strlen(RENAME_DIR_FAILED));
+        }
+
+        write((char*)respdu,respdu->uiPDULen);
+
+        free(respdu);
+        respdu = NULL;
+        break;
+
         break;
     }
     default:

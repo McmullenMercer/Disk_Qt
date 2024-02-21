@@ -25,6 +25,9 @@ public:
 
     QString loginName();
 
+    QString curPath();
+
+
 public slots:  //槽函数，是信号的处理函数，与普通函数区分
     void showConnect();  //指示服务器连接槽函数
     void  recvMsg();  //数据接收函槽数
@@ -48,5 +51,7 @@ private:
     QTcpSocket m_tcpSocket;
 
     QString m_strLoginName;
+
+    QString m_strCurPath;
 };
 #endif // TCPCLIENT_H
